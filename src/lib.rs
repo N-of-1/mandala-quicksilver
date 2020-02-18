@@ -47,7 +47,7 @@ impl MutableMesh {
     }
 
     /// Render the vector shape with current transform into screen triangles
-    fn tesselate(&mut self, shape_renderer: &mut ShapeRenderer) {
+    pub fn tesselate(&mut self, shape_renderer: &mut ShapeRenderer) {
         shape_renderer.set_color(self.color);
         shape_renderer.set_transform(self.transform);
 
