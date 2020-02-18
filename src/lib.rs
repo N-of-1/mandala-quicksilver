@@ -2,7 +2,7 @@
 extern crate quicksilver;
 extern crate svg;
 
-#[macro_use]
+//#[macro_use]
 extern crate log;
 
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
@@ -13,15 +13,12 @@ extern crate web_logger;
 
 use quicksilver::{
     geom::{Transform, Vector},
-    graphics::{Color, Mesh, ShapeRenderer},
-    input::{ButtonState, Key},
-    lifecycle::{run, Event, Settings, State, Window},
+    graphics::{Color, ShapeRenderer},
     lyon::{
         path::Path,
         svg::path_utils::build_path,
         tessellation::{FillOptions, FillTessellator},
     },
-    Result,
 };
 use std::fs::File;
 use std::io::Read;
@@ -36,9 +33,10 @@ pub struct MutableMesh {
 /// A renderable vector object from SVG with a runtime tranformation matrix
 impl MutableMesh {
     /// Create a default with key values specified
-    pub fn new(svg_file_name: &str, color: Color) -> Self {
+    pub fn new(svg_file_name: &str) -> Self {
         let path = svg_to_path(svg_file_name);
         let tessellator = FillTessellator::new();
+        let color = Color::RED; // Initial state will be overriden on first draw
 
         Self {
             color,
@@ -88,10 +86,8 @@ struct MandalaState {
 /// The petals can "open", change color and other tranformations applied at runtime with clock-based smoothing between rendered frames
 pub struct Mandala {
     petal_count: usize,
-    center_radius: f32,
     state_open: MandalaState,
     state_closed: MandalaState,
-    mandala_angle: f32, // Drive this externally to spin if desired
     mandala_center: Transform,
     petal_rotation: Vec<Transform>,
     current_phase_start: f32, // [Sec] When we started the latest transition
@@ -105,15 +101,13 @@ impl Mandala {
         screen_position: impl Into<Vector>,
         scale: impl Into<Vector>,
         petal_count: usize,
-        center_radius: f32,
         color_open: Color,
         color_closed: Color,
     ) -> Self {
-        let mandala_angle = 0.0; // No spin of petals relative to center
         let mandala_center = Transform::translate(screen_position) * Transform::scale(scale);
         let current_phase_start = 0.0; // Start the transition clock when the application starts
         let current_phase_duration = 3.0; // Start the transition clock when the application starts
-        let petal = MutableMesh::new(petal_svg_filename, Color::GREEN);
+        let petal = MutableMesh::new(petal_svg_filename);
         let mut petal_rotation: Vec<Transform> = Vec::new();
         let petal_angle = 360.0 / petal_count as f32;
         for i in 0..petal_count {
@@ -122,7 +116,6 @@ impl Mandala {
 
         Self {
             petal_count,
-            center_radius,
             state_open: MandalaState {
                 color: color_open,
                 petal_rotate_transform: Transform::rotate(90),
@@ -135,7 +128,6 @@ impl Mandala {
                 petal_translate_transform: Transform::translate((0.0, 0.0)),
                 petal_scale_transform: Transform::scale((0.1, 1.0)),
             },
-            mandala_angle,
             mandala_center,
             petal_rotation,
             current_phase_start,
@@ -264,7 +256,7 @@ fn extract_path_str_from_svg_str(svg_str: &str) -> String {
     let parser = svg::parser::Parser::new(svg_str);
     for event in parser {
         match event {
-            svg::parser::Event::Tag(path, Start, attributes) => {
+            svg::parser::Event::Tag(_path, _type, attributes) => {
                 if let Some(data) = attributes.get("d") {
                     return data.to_string();
                 }

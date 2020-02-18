@@ -1,9 +1,9 @@
 // examples/display_mandala.rs
 
-use mandala_quicksilver::{Mandala, MutableMesh};
+use mandala_quicksilver::Mandala;
 
 use quicksilver::{
-    geom::{Transform, Vector},
+    geom::Vector,
     graphics::{Color, Mesh, ShapeRenderer},
     input::{ButtonState, Key},
     lifecycle::{run, Event, Settings, State, Window},
@@ -15,7 +15,6 @@ use std::time::Instant;
 extern crate log;
 
 const PETAL_FILENAME: &str = "petal.svg";
-const LOGO_FILENAME: &str = "Rust_programming_language_black_logo.svg";
 const CANVAS_SIZE: (f32, f32) = (1024.0, 1024.0);
 const FPS: f64 = 60.0; // Frames per second
 const UPS: f64 = 60.0; // Updates per second
@@ -49,7 +48,6 @@ fn main() {
 }
 
 struct MandalaExample {
-    filled_logo: MutableMesh,
     start_time: Instant,
     mandala: Mandala,
 }
@@ -62,7 +60,6 @@ impl MandalaExample {
 
 impl State for MandalaExample {
     fn new() -> Result<MandalaExample> {
-        let filled_logo = MutableMesh::new(LOGO_FILENAME);
         let start_time = Instant::now();
         let mandala = Mandala::new(
             PETAL_FILENAME,
@@ -74,7 +71,6 @@ impl State for MandalaExample {
         );
 
         Ok(MandalaExample {
-            filled_logo,
             start_time,
             mandala,
         })
@@ -94,27 +90,11 @@ impl State for MandalaExample {
         window.clear(COLOR_BACKGROUND)?;
 
         let mut mesh = Mesh::new();
-        let seconds_since_start = self.seconds_since_start();
-        let scale = ((seconds_since_start * 3.0).sin() as f32 + 1.0) * 2.0;
-        let color = Color {
-            r: 1.0,
-            g: 0.0,
-            a: 1.0,
-            b: (seconds_since_start * 4.0).sin(),
-        };
-        self.filled_logo.set_color(color);
-        self.filled_logo.set_transform(
-            Transform::translate((200, 200))
-                * Transform::rotate(seconds_since_start * 5.0)
-                * Transform::scale((scale, 1.0)),
-        );
-        let mut shape_renderer = ShapeRenderer::new(&mut mesh, self.filled_logo.color);
-
-        // Draw the logo
-        // self.filled_logo.tesselate(&mut shape_renderer);
+        let mut shape_renderer = ShapeRenderer::new(&mut mesh, Color::RED); // Color is required but will be overridden below
 
         // Draw the mandala
-        self.mandala.draw(seconds_since_start, &mut shape_renderer);
+        self.mandala
+            .draw(self.seconds_since_start(), &mut shape_renderer);
 
         // Merge the rendered mesh to screen
         window.mesh().extend(&mesh);
