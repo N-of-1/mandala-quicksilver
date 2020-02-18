@@ -15,6 +15,7 @@ use std::time::Instant;
 extern crate log;
 
 const PETAL_FILENAME: &str = "petal.svg";
+const PETAL_COUNT: usize = 20;
 const CANVAS_SIZE: (f32, f32) = (1024.0, 1024.0);
 const FPS: f64 = 60.0; // Frames per second
 const UPS: f64 = 60.0; // Updates per second
@@ -65,7 +66,7 @@ impl State for MandalaExample {
             PETAL_FILENAME,
             (CANVAS_SIZE.0 / 2.0, CANVAS_SIZE.1 / 2.0),
             (2.0, 2.0),
-            20,
+            PETAL_COUNT,
             COLOR_PETAL_OPEN,
             COLOR_PETAL_CLOSED,
         );
@@ -78,6 +79,9 @@ impl State for MandalaExample {
 
     fn event(&mut self, event: &Event, window: &mut Window) -> Result<()> {
         match *event {
+            Event::Key(Key::Space, ButtonState::Pressed) => {
+                self.start_time = Instant::now(); // Restart the transition
+            }
             Event::Key(Key::Escape, ButtonState::Pressed) => {
                 window.close();
             }
@@ -90,13 +94,10 @@ impl State for MandalaExample {
         window.clear(COLOR_BACKGROUND)?;
 
         let mut mesh = Mesh::new();
-        let mut shape_renderer = ShapeRenderer::new(&mut mesh, Color::RED); // Color is required but will be overridden below
+        let mut shape_renderer = ShapeRenderer::new(&mut mesh, Color::RED);
 
-        // Draw the mandala
         self.mandala
             .draw(self.seconds_since_start(), &mut shape_renderer);
-
-        // Merge the rendered mesh to screen
         window.mesh().extend(&mesh);
 
         Ok(())
