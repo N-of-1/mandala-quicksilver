@@ -9,7 +9,6 @@ edition = "2018"
 [dependencies]
 svg="0.6"
 log = "0.4"
-# nalgebra = { version = "0.18", features = ["default", "stdweb"] }
 
 # Uncomment this block unless targeting webassembly
 [target.'cfg(target_arch = "x86_64")'.dependencies]
