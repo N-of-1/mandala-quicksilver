@@ -1,0 +1,26 @@
+[package]
+name = "mandala_quicksilver"
+version = "0.1.0"
+authors = ["Paul Houghton <paulirotta@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+svg="0.6"
+log = "0.4"
+nalgebra = { version = "0.18", features = ["default", "stdweb"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+env_logger = "0.7"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web_logger = { version = "0.2" }
+
+# Uncomment this block unless targeting webassembly
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="image_fix_and_add"}
+
+# Uncomment this block if targeting webassembly
+#[target.'cfg(not(target_arch = "x86_64"))'.dependencies]
+#quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="arm_image_fix_and_add"}
