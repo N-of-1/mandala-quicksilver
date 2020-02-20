@@ -1,4 +1,4 @@
-# mandala_quicksilver
+# mandala-quicksilver
 
 master
 [![Master branch build status](https://github.com/N-of-1/mandala-quicksilver/workflows/Rust/badge.svg?branch=master)](https://github.com/N-of-1/mandala-quicksilver/actions) &emsp; dev
