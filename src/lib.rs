@@ -74,11 +74,27 @@ impl MutableMesh {
 
 /// A representation of how open/closed the mandala is to mark the endpoints of motion
 #[derive(Debug)]
-struct MandalaState {
+pub struct MandalaState {
     color: Color,
     petal_rotate_transform: Transform,
     petal_scale_transform: Transform,
     petal_translate_transform: Transform,
+}
+
+impl MandalaState {
+    pub fn new(
+        color: Color,
+        petal_rotate_transform: Transform,
+        petal_scale_transform: Transform,
+        petal_translate_transform: Transform,
+    ) -> Self {
+        Self {
+            color,
+            petal_rotate_transform,
+            petal_scale_transform,
+            petal_translate_transform,
+        }
+    }
 }
 
 /// A flower-like set of "petals" arranged evenly around an invisible central hub
@@ -86,8 +102,8 @@ struct MandalaState {
 /// The petals can "open", change color and other tranformations applied at runtime with clock-based smoothing between rendered frames
 pub struct Mandala {
     petal_count: usize,
-    state_open: MandalaState,
-    state_closed: MandalaState,
+    mandala_state_open: MandalaState,
+    mandala_state_closed: MandalaState,
     mandala_center: Transform,
     petal_rotation: Vec<Transform>,
     current_phase_start: f32, // [Sec] When we started the latest transition
@@ -101,8 +117,8 @@ impl Mandala {
         screen_position: impl Into<Vector>,
         scale: impl Into<Vector>,
         petal_count: usize,
-        color_open: Color,
-        color_closed: Color,
+        mandala_state_open: MandalaState,
+        mandala_state_closed: MandalaState,
     ) -> Self {
         let mandala_center = Transform::translate(screen_position) * Transform::scale(scale);
         let current_phase_start = 0.0; // Start the transition clock when the application starts
@@ -116,18 +132,8 @@ impl Mandala {
 
         Self {
             petal_count,
-            state_open: MandalaState {
-                color: color_open,
-                petal_rotate_transform: Transform::rotate(90),
-                petal_translate_transform: Transform::translate((50.0, 0.0)),
-                petal_scale_transform: Transform::scale((1.0, 1.0)),
-            },
-            state_closed: MandalaState {
-                color: color_closed,
-                petal_rotate_transform: Transform::rotate(0.0),
-                petal_translate_transform: Transform::translate((0.0, 0.0)),
-                petal_scale_transform: Transform::scale((0.1, 1.0)),
-            },
+            mandala_state_open,
+            mandala_state_closed,
             mandala_center,
             petal_rotation,
             current_phase_start,
@@ -164,23 +170,23 @@ impl Mandala {
         Color {
             r: self.interpolate(
                 current_time,
-                self.state_closed.color.r,
-                self.state_open.color.r,
+                self.mandala_state_closed.color.r,
+                self.mandala_state_open.color.r,
             ),
             g: self.interpolate(
                 current_time,
-                self.state_closed.color.g,
-                self.state_open.color.g,
+                self.mandala_state_closed.color.g,
+                self.mandala_state_open.color.g,
             ),
             b: self.interpolate(
                 current_time,
-                self.state_closed.color.b,
-                self.state_open.color.b,
+                self.mandala_state_closed.color.b,
+                self.mandala_state_open.color.b,
             ),
             a: self.interpolate(
                 current_time,
-                self.state_closed.color.a,
-                self.state_open.color.a,
+                self.mandala_state_closed.color.a,
+                self.mandala_state_open.color.a,
             ),
         }
     }
@@ -189,18 +195,18 @@ impl Mandala {
         let color = self.interpolate_color(current_time);
         let petal_rotate_transform = self.interpolate_transform(
             current_time,
-            &self.state_open.petal_rotate_transform,
-            &self.state_closed.petal_rotate_transform,
+            &self.mandala_state_open.petal_rotate_transform,
+            &self.mandala_state_closed.petal_rotate_transform,
         );
         let petal_scale_transform = self.interpolate_transform(
             current_time,
-            &self.state_open.petal_scale_transform,
-            &self.state_closed.petal_scale_transform,
+            &self.mandala_state_open.petal_scale_transform,
+            &self.mandala_state_closed.petal_scale_transform,
         );
         let petal_translate_transform = self.interpolate_transform(
             current_time,
-            &self.state_open.petal_translate_transform,
-            &self.state_closed.petal_translate_transform,
+            &self.mandala_state_open.petal_translate_transform,
+            &self.mandala_state_closed.petal_translate_transform,
         );
 
         MandalaState {
@@ -270,12 +276,26 @@ fn extract_path_str_from_svg_str(svg_str: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use quicksilver::geom::Transform;
+    use crate::{Mandala, MandalaState};
+    use quicksilver::{
+        geom::Transform,
+        graphics::{Color, Mesh, ShapeRenderer},
+    };
 
     #[test]
     fn test_add_mandala_transforms() {
         let left = Transform::IDENTITY;
         let right = left * 2 - Transform::IDENTITY;
         assert_eq!(left, right);
+    }
+
+    #[test]
+    fn test_create_mandala_state() {
+        let _mandala_state_open = MandalaState {
+            color: Color::RED,
+            petal_rotate_transform: Transform::rotate(90),
+            petal_translate_transform: Transform::translate((50.0, 0.0)),
+            petal_scale_transform: Transform::scale((1.0, 1.0)),
+        };
     }
 }
