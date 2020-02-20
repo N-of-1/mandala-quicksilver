@@ -276,11 +276,8 @@ fn extract_path_str_from_svg_str(svg_str: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Mandala, MandalaState};
-    use quicksilver::{
-        geom::Transform,
-        graphics::{Color, Mesh, ShapeRenderer},
-    };
+    use crate::MandalaState;
+    use quicksilver::{geom::Transform, graphics::Color};
 
     #[test]
     fn test_add_mandala_transforms() {

@@ -37,5 +37,5 @@ fn test_create_and_draw_mandala() {
     let triangles = mesh.triangles;
     let expected = 1320;
 
-    assert_eq!(1320, triangles.len());
+    assert_eq!(expected, triangles.len());
 }
