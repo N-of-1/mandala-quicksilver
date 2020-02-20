@@ -9,10 +9,18 @@ use quicksilver::{
     lifecycle::{run, Event, Settings, State, Window},
     Result,
 };
-use std::time::Instant;
 
 #[macro_use]
 extern crate log;
+
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+extern crate wasm_timer;
+
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+use std::time::Instant;
+
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+use instant::Instant;
 
 const PETAL_FILENAME: &str = "petal.svg";
 const PETAL_COUNT: usize = 20;
