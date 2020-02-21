@@ -7,7 +7,7 @@ use quicksilver::{
 };
 
 #[test]
-fn test_create_and_draw_mandala() {
+fn integration_test_draw_mandala_closed() {
     let mandala_state_open = MandalaState::new(
         Color::RED,
         Transform::rotate(90),
@@ -27,14 +27,15 @@ fn test_create_and_draw_mandala() {
         5,
         mandala_state_open,
         mandala_state_closed,
-        1.0,
+        0.5, // Half closed
     );
+    assert_eq!(0.5, mandala.current_value(0.0));
 
     let mut mesh = Mesh::new();
     let mut shape_renderer = ShapeRenderer::new(&mut mesh, Color::PURPLE);
     let seconds_since_start = 0.1;
 
     mandala.draw(seconds_since_start, &mut shape_renderer);
-    let expected = 660;
+    let expected = 660; //TODO Is this correct?
     assert_eq!(expected, (&mesh.triangles).len());
 }

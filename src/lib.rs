@@ -198,11 +198,10 @@ impl Mandala {
 
     /// Get a [0.0..1.0] number representing %open of the mandala based on the transition rendering time
     pub fn current_value(&self, current_time: f32) -> f32 {
-        self.interpolate(
-            current_time,
-            self.current_transition.start_value,
-            self.current_transition.end_value,
-        )
+        let start = self.current_transition.start_value;
+        let end = self.current_transition.end_value;
+
+        start + (end - start) * self.current_percent(current_time)
     }
 
     /// Get a [0.0..1.0] number representing %complete of the transition rendering time
@@ -216,41 +215,41 @@ impl Mandala {
         (current_time - self.current_transition.start_time) / self.current_transition.duration
     }
 
-    /// Find the float value from [start..end] with linear interpolation based on time
-    fn interpolate(&self, current_time: f32, start: f32, end: f32) -> f32 {
-        start + (end - start) * self.current_percent(current_time)
+    /// Find the float % from [start..end] with linear interpolation based on time
+    fn interpolate_value(&self, current_time: f32, start: f32, end: f32) -> f32 {
+        start + (end - start) * self.current_value(current_time)
     }
 
     /// Find the Tranform value from [start..end] using independent linear interpolation on each matrix element based on time
-    fn interpolate_transform(
+    fn current_transform(
         &self,
         current_time: f32,
         start: &Transform,
         end: &Transform,
     ) -> Transform {
-        *start + (*end - *start) * self.current_percent(current_time)
+        *start + (*end - *start) * self.current_value(current_time)
     }
 
     /// Find the Color value from [start..end] with linear interpolation of each ARGB value using independent linear interpolation
     /// Note: this may not be aesthetically ideal as you frequently interpolate through a brighter center-of-color-wheel value on the way to your destination. Choose your colors accordingly
     fn interpolate_color(&self, current_time: f32) -> Color {
         Color {
-            r: self.interpolate(
+            r: self.interpolate_value(
                 current_time,
                 self.mandala_state_closed.color.r,
                 self.mandala_state_open.color.r,
             ),
-            g: self.interpolate(
+            g: self.interpolate_value(
                 current_time,
                 self.mandala_state_closed.color.g,
                 self.mandala_state_open.color.g,
             ),
-            b: self.interpolate(
+            b: self.interpolate_value(
                 current_time,
                 self.mandala_state_closed.color.b,
                 self.mandala_state_open.color.b,
             ),
-            a: self.interpolate(
+            a: self.interpolate_value(
                 current_time,
                 self.mandala_state_closed.color.a,
                 self.mandala_state_open.color.a,
@@ -261,17 +260,17 @@ impl Mandala {
     /// Get the state of the mandala based on time and linear interpolation of all values between endpoints
     fn current_state(&mut self, current_time: f32) -> MandalaState {
         let color = self.interpolate_color(current_time);
-        let petal_rotate_transform = self.interpolate_transform(
+        let petal_rotate_transform = self.current_transform(
             current_time,
             &self.mandala_state_open.petal_rotate_transform,
             &self.mandala_state_closed.petal_rotate_transform,
         );
-        let petal_scale_transform = self.interpolate_transform(
+        let petal_scale_transform = self.current_transform(
             current_time,
             &self.mandala_state_open.petal_scale_transform,
             &self.mandala_state_closed.petal_scale_transform,
         );
-        let petal_translate_transform = self.interpolate_transform(
+        let petal_translate_transform = self.current_transform(
             current_time,
             &self.mandala_state_open.petal_translate_transform,
             &self.mandala_state_closed.petal_translate_transform,
@@ -287,7 +286,7 @@ impl Mandala {
 
     /// Render the interpolated current time state to the ShapeRenderer's display mesh
     pub fn draw(&mut self, current_time: f32, shape_renderer: &mut ShapeRenderer) {
-        let mandala_state: MandalaState = self.current_state(current_time);
+        let mandala_state = self.current_state(current_time);
 
         self.petal.set_color(mandala_state.color);
 
