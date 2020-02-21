@@ -85,14 +85,16 @@ impl State for MandalaExample {
             Transform::translate((0.0, 0.0)),
             Transform::scale((0.1, 1.0)),
         );
-        let mandala = Mandala::new(
+        let mut mandala = Mandala::new(
             PETAL_FILENAME,
             (CANVAS_SIZE.0 / 2.0, CANVAS_SIZE.1 / 2.0),
-            (2.0, 2.0),
+            (1.8, 1.8),
             PETAL_COUNT,
             mandala_state_open,
             mandala_state_closed,
+            1.0,
         );
+        mandala.start_transition(0.0, 3.0, 0.0);
 
         Ok(MandalaExample {
             start_time,

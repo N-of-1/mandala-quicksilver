@@ -82,6 +82,7 @@ pub struct MandalaState {
 }
 
 impl MandalaState {
+    /// Create a new open or closed state for the manipulation of petals
     pub fn new(
         color: Color,
         petal_rotate_transform: Transform,
@@ -97,6 +98,39 @@ impl MandalaState {
     }
 }
 
+/// A single animation from value to value over a defined time
+struct MandalaTransition {
+    start_time: f32,  // [Sec] When we started the latest transition
+    duration: f32,    // [Sec] Where we got here
+    start_value: f32, // [0.0..1.0] The position we are animating from
+    end_value: f32,   // [0.0..1.0] The position we are animating to
+}
+
+impl MandalaTransition {
+    /// An interplated animation from 'start_time' lasting 'duration' and sweeping from mandala state 'start_value' [0.0-1.0] to 'end_value' [0.0-1.0]
+    fn new(start_time: f32, duration: f32, start_value: f32, end_value: f32) -> Self {
+        Self {
+            start_time,
+            duration,
+            start_value,
+            end_value,
+        }
+    }
+
+    /// A non-animated, fixed value
+    fn fixed_value(value: f32) -> Self {
+        let start_time = 0.0;
+        let duration = 0.1;
+
+        Self {
+            start_time,
+            duration,
+            start_value: value,
+            end_value: value,
+        }
+    }
+}
+
 /// A flower-like set of "petals" arranged evenly around an invisible central hub
 ///
 /// The petals can "open", change color and other tranformations applied at runtime with clock-based smoothing between rendered frames
@@ -106,12 +140,14 @@ pub struct Mandala {
     mandala_state_closed: MandalaState,
     mandala_center: Transform,
     petal_rotation: Vec<Transform>,
-    current_phase_start: f32, // [Sec] When we started the latest transition
-    current_phase_duration: f32, // [Sec] Where we got here
     petal: MutableMesh,
+    current_transition: MandalaTransition,
 }
 
 impl Mandala {
+    /// Create a new Mandala
+    ///
+    /// By default, this will render a 3sec transition from open to closed state on creation. You can tailor this by
     pub fn new(
         petal_svg_filename: &str,
         screen_position: impl Into<Vector>,
@@ -119,16 +155,16 @@ impl Mandala {
         petal_count: usize,
         mandala_state_open: MandalaState,
         mandala_state_closed: MandalaState,
+        value: f32,
     ) -> Self {
         let mandala_center = Transform::translate(screen_position) * Transform::scale(scale);
-        let current_phase_start = 0.0; // Start the transition clock when the application starts
-        let current_phase_duration = 3.0; // Start the transition clock when the application starts
         let petal = MutableMesh::new(petal_svg_filename);
         let mut petal_rotation: Vec<Transform> = Vec::new();
         let petal_angle = 360.0 / petal_count as f32;
         for i in 0..petal_count {
             petal_rotation.push(Transform::rotate(petal_angle * i as f32));
         }
+        let current_transition = MandalaTransition::fixed_value(value);
 
         Self {
             petal_count,
@@ -136,27 +172,56 @@ impl Mandala {
             mandala_state_closed,
             mandala_center,
             petal_rotation,
-            current_phase_start,
-            current_phase_duration,
+            current_transition,
             petal,
         }
     }
 
-    pub fn current_percent(&self, current_time: f32) -> f32 {
-        debug_assert!(current_time >= self.current_phase_start);
+    /// Initiate an animated transition from the value at 'current_time' [sec] value to 'target_value' [0.0-1.0] which will complete 'transition_duration' [sec] from now
+    ///
+    /// Note that for continuous smooth animation as a sequence of linear slides without pauses in between, you may want 'duration' to be slightly greater than the expected rate at which new values will arrive (example: every 0.2sec with 0.3sec max jitter on data source and network send plus receive task runtime, so set duration to 0.5). This keeps the animation smooth even when the data flow driving it and the computer rendering it are not smooth. The cost is you will be up to 0.3sec behind the latest value received, but this buffer time covers normally expected delays in receiving new values. If the value expected 0.2sec from the previous one receive time is more that 'transition_duration' (0.5sec) late, the animation will have time to complete and the value will appear to freeze until a new value arrives.
+    pub fn start_transition(
+        &mut self,
+        current_time: f32,
+        transition_duration: f32,
+        target_value: f32,
+    ) {
+        let current_value = self.current_value(current_time);
 
-        let end_time = self.current_phase_start + self.current_phase_duration;
+        self.current_transition = MandalaTransition::new(
+            current_time,
+            transition_duration,
+            current_value,
+            target_value,
+        )
+    }
+
+    /// Get a [0.0..1.0] number representing %open of the mandala based on the transition rendering time
+    pub fn current_value(&self, current_time: f32) -> f32 {
+        self.interpolate(
+            current_time,
+            self.current_transition.start_value,
+            self.current_transition.end_value,
+        )
+    }
+
+    /// Get a [0.0..1.0] number representing %complete of the transition rendering time
+    pub fn current_percent(&self, current_time: f32) -> f32 {
+        debug_assert!(current_time >= self.current_transition.start_time);
+        let end_time = self.current_transition.start_time + self.current_transition.duration;
         if current_time > end_time {
             return 1.0;
         }
 
-        (current_time - self.current_phase_start) / self.current_phase_duration
+        (current_time - self.current_transition.start_time) / self.current_transition.duration
     }
 
+    /// Find the float value from [start..end] with linear interpolation based on time
     fn interpolate(&self, current_time: f32, start: f32, end: f32) -> f32 {
         start + (end - start) * self.current_percent(current_time)
     }
 
+    /// Find the Tranform value from [start..end] using independent linear interpolation on each matrix element based on time
     fn interpolate_transform(
         &self,
         current_time: f32,
@@ -166,6 +231,8 @@ impl Mandala {
         *start + (*end - *start) * self.current_percent(current_time)
     }
 
+    /// Find the Color value from [start..end] with linear interpolation of each ARGB value using independent linear interpolation
+    /// Note: this may not be aesthetically ideal as you frequently interpolate through a brighter center-of-color-wheel value on the way to your destination. Choose your colors accordingly
     fn interpolate_color(&self, current_time: f32) -> Color {
         Color {
             r: self.interpolate(
@@ -191,6 +258,7 @@ impl Mandala {
         }
     }
 
+    /// Get the state of the mandala based on time and linear interpolation of all values between endpoints
     fn current_state(&mut self, current_time: f32) -> MandalaState {
         let color = self.interpolate_color(current_time);
         let petal_rotate_transform = self.interpolate_transform(
@@ -217,6 +285,7 @@ impl Mandala {
         }
     }
 
+    /// Render the interpolated current time state to the ShapeRenderer's display mesh
     pub fn draw(&mut self, current_time: f32, shape_renderer: &mut ShapeRenderer) {
         let mandala_state: MandalaState = self.current_state(current_time);
 

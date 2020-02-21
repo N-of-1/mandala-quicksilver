@@ -27,15 +27,14 @@ fn test_create_and_draw_mandala() {
         5,
         mandala_state_open,
         mandala_state_closed,
+        1.0,
     );
+
     let mut mesh = Mesh::new();
     let mut shape_renderer = ShapeRenderer::new(&mut mesh, Color::PURPLE);
-    let mut seconds_since_start = 0.1;
-    mandala.draw(seconds_since_start, &mut shape_renderer);
-    seconds_since_start = 65.0;
-    mandala.draw(seconds_since_start, &mut shape_renderer);
-    let triangles = mesh.triangles;
-    let expected = 1320;
+    let seconds_since_start = 0.1;
 
-    assert_eq!(expected, triangles.len());
+    mandala.draw(seconds_since_start, &mut shape_renderer);
+    let expected = 660;
+    assert_eq!(expected, (&mesh.triangles).len());
 }
