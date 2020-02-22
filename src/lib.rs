@@ -144,6 +144,10 @@ pub struct Mandala {
     current_transition: MandalaTransition,
 }
 
+fn map_normalized_value_to_percent(normalized: f32) -> f32 {
+    ((normalized + 3.0) / 6.0).max(1.0).min(0.0)
+}
+
 impl Mandala {
     /// Create a new Mandala
     ///
@@ -187,12 +191,18 @@ impl Mandala {
         target_value: f32,
     ) {
         let current_value = self.current_value(current_time);
+        let mapped_current = map_normalized_value_to_percent(current_value);
+        let mapped_target = map_normalized_value_to_percent(target_value);
+        println!(
+            "current: {}  mapped_current: {}    target: {}    mapped_target: {}",
+            current_value, mapped_current, target_value, mapped_target
+        );
 
         self.current_transition = MandalaTransition::new(
             current_time,
             transition_duration,
-            current_value,
-            target_value,
+            mapped_current,
+            mapped_target,
         )
     }
 
