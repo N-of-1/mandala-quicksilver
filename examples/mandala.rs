@@ -22,8 +22,10 @@ use std::time::Instant;
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 use instant::Instant;
 
-const PETAL_FILENAME: &str = "petal.svg";
-const PETAL_COUNT: usize = 20;
+//const PETAL_FILENAME: &str = "petal_bad.svg";
+const PETAL_STRINGS_FILENAME: &str = "svg_strings.txt";
+const PETAL_COUNT: usize = 12;
+const PETAL_STAGE: usize = 30;
 const CANVAS_SIZE: (f32, f32) = (1024.0, 1024.0);
 const FPS: f64 = 60.0; // Frames per second
 const UPS: f64 = 60.0; // Updates per second
@@ -71,10 +73,11 @@ impl State for MandalaExample {
     fn new() -> Result<MandalaExample> {
         let start_time = Instant::now();
         let mandala = Mandala::new(
-            PETAL_FILENAME,
+            PETAL_STRINGS_FILENAME,
             (CANVAS_SIZE.0 / 2.0, CANVAS_SIZE.1 / 2.0),
             (2.0, 2.0),
             PETAL_COUNT,
+            PETAL_STAGE,
             COLOR_PETAL_OPEN,
             COLOR_PETAL_CLOSED,
         );
@@ -105,7 +108,7 @@ impl State for MandalaExample {
         let mut shape_renderer = ShapeRenderer::new(&mut mesh, Color::RED);
 
         self.mandala
-            .draw(self.seconds_since_start(), &mut shape_renderer);
+            .draw(self.seconds_since_start(), &mut shape_renderer, 1 as usize);
         window.mesh().extend(&mesh);
 
         Ok(())

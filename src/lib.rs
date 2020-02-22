@@ -21,7 +21,7 @@ use quicksilver::{
     },
 };
 use std::fs::File;
-use std::io::Read;
+use std::io::{prelude::*, BufReader};
 
 pub struct MutableMesh {
     pub color: Color,
@@ -34,7 +34,7 @@ pub struct MutableMesh {
 impl MutableMesh {
     /// Create a default with key values specified
     pub fn new(svg_file_name: &str) -> Self {
-        let path = svg_to_path(svg_file_name);
+        let mut path = parse_path_from_svg_str(svg_file_name);
         let tessellator = FillTessellator::new();
         let color = Color::RED; // Initial state will be overriden on first draw
 
@@ -44,6 +44,12 @@ impl MutableMesh {
             path,
             tessellator,
         }
+    }
+
+    pub fn update_path(&mut self, svg_file_name: &str) -> &mut Self {
+        self.path = parse_path_from_svg_str(svg_file_name);
+
+        self
     }
 
     /// Render the vector shape with current transform into screen triangles
@@ -92,22 +98,30 @@ pub struct Mandala {
     petal_rotation: Vec<Transform>,
     current_phase_start: f32, // [Sec] When we started the latest transition
     current_phase_duration: f32, // [Sec] Where we got here
-    petal: MutableMesh,
+    //petal_nodes: Vec<MutableMesh>,
+    svg_d_strings: Vec<String>,
 }
 
 impl Mandala {
     pub fn new(
-        petal_svg_filename: &str,
+        petal_shapes_filename: &str,
         screen_position: impl Into<Vector>,
         scale: impl Into<Vector>,
         petal_count: usize,
+        petal_stages: usize,
         color_open: Color,
         color_closed: Color,
     ) -> Self {
         let mandala_center = Transform::translate(screen_position) * Transform::scale(scale);
         let current_phase_start = 0.0; // Start the transition clock when the application starts
         let current_phase_duration = 3.0; // Start the transition clock when the application starts
-        let petal = MutableMesh::new(petal_svg_filename);
+        let svg_d_strings: Vec<String> = lines_from_file(petal_shapes_filename);
+        //let mut petal_nodes: Vec<MutableMesh> = Vec::new();
+ //       for i in 0..petal_stages {
+  //          petal_nodes.push(MutableMesh::new(&svg_d_strings[i]))
+    //    }
+        let mut petal: MutableMesh = MutableMesh::new(&svg_d_strings[29 as usize]);
+        //let petal: MutableMesh = p;
         let mut petal_rotation: Vec<Transform> = Vec::new();
         let petal_angle = 360.0 / petal_count as f32;
         for i in 0..petal_count {
@@ -118,21 +132,21 @@ impl Mandala {
             petal_count,
             state_open: MandalaState {
                 color: color_open,
-                petal_rotate_transform: Transform::rotate(90),
-                petal_translate_transform: Transform::translate((50.0, 0.0)),
-                petal_scale_transform: Transform::scale((1.0, 1.0)),
+                petal_translate_transform: Transform::translate((0.0,0.0)),
+                petal_rotate_transform: Transform::rotate(-5),
+                petal_scale_transform: Transform::scale((1., 1.)),
             },
             state_closed: MandalaState {
                 color: color_closed,
-                petal_rotate_transform: Transform::rotate(0.0),
-                petal_translate_transform: Transform::translate((0.0, 0.0)),
-                petal_scale_transform: Transform::scale((0.1, 1.0)),
+                petal_translate_transform: Transform::translate((0.0,0.0)),
+                petal_rotate_transform: Transform::rotate(5.0),
+                petal_scale_transform: Transform::scale((1.0, 1.0)),
             },
             mandala_center,
             petal_rotation,
             current_phase_start,
             current_phase_duration,
-            petal,
+            svg_d_strings
         }
     }
 
@@ -211,15 +225,15 @@ impl Mandala {
         }
     }
 
-    pub fn draw(&mut self, current_time: f32, shape_renderer: &mut ShapeRenderer) {
+    pub fn draw(&mut self, current_time: f32, shape_renderer: &mut ShapeRenderer, index: usize) {
         let mandala_state: MandalaState = self.current_state(current_time);
-
-        self.petal.set_color(mandala_state.color);
+        let mut petal = MutableMesh::new(&self.svg_d_strings[index]);
+        petal.set_color(mandala_state.color);
 
         // For each petal
         for i in 0..self.petal_count {
             let petal_rot: &Transform = self.petal_rotation.get(i).unwrap();
-            self.petal.set_transform(
+            petal.set_transform(
                 self.mandala_center
                     * *petal_rot
                     * mandala_state.petal_translate_transform
@@ -227,7 +241,7 @@ impl Mandala {
                     * mandala_state.petal_rotate_transform,
             );
 
-            self.petal.tesselate(shape_renderer);
+            petal.tesselate(shape_renderer);
         }
     }
 }
@@ -235,37 +249,17 @@ impl Mandala {
 #[derive(Clone, Debug, PartialEq)]
 pub struct ParseError;
 
-pub fn svg_to_path(file_name: &str) -> Path {
-    match File::open(file_name) {
-        Ok(mut file) => {
-            let mut svg_str = String::new();
-            file.read_to_string(&mut svg_str).unwrap();
-            parse_path_from_svg_str(&svg_str)
-        }
-        Err(e) => panic!("Can not open SVG file: '{}', {}", file_name, e),
-    }
-}
-
 fn parse_path_from_svg_str(svg_str: &str) -> Path {
-    let path_str = extract_path_str_from_svg_str(svg_str);
-
-    build_path(Path::builder().with_svg(), &path_str).unwrap()
+    //let path_str = build_path_str_from_svg_str(svg_str);
+    build_path(Path::builder().with_svg(), &svg_str).unwrap()
 }
 
-fn extract_path_str_from_svg_str(svg_str: &str) -> String {
-    let parser = svg::parser::Parser::new(svg_str);
-    for event in parser {
-        match event {
-            svg::parser::Event::Tag(_path, _type, attributes) => {
-                if let Some(data) = attributes.get("d") {
-                    return data.to_string();
-                }
-            }
-            _ => (),
-        }
-    }
-
-    panic!("Can not find path data in SVG file");
+fn lines_from_file(filename: impl AsRef<std::path::Path>) -> Vec<String> {
+    let file = File::open(filename).expect("no such file");
+    let buf = BufReader::new(file);
+    buf.lines()
+        .map(|l| l.expect("Could not parse line"))
+        .collect()
 }
 
 #[cfg(test)]
