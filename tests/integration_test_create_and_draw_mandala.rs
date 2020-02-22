@@ -21,7 +21,7 @@ fn test_create_and_draw_mandala() {
         Transform::scale((0.1, 1.0)),
     );
     let mut mandala = Mandala::new(
-        "tests/petal.svg",
+        "static/svg_strings.txt",
         (500, 500),
         (2, 2),
         5,
@@ -31,11 +31,11 @@ fn test_create_and_draw_mandala() {
     let mut mesh = Mesh::new();
     let mut shape_renderer = ShapeRenderer::new(&mut mesh, Color::PURPLE);
     let mut seconds_since_start = 0.1;
-    mandala.draw(seconds_since_start, &mut shape_renderer);
+    mandala.draw(seconds_since_start, &mut shape_renderer, 1);
     seconds_since_start = 65.0;
-    mandala.draw(seconds_since_start, &mut shape_renderer);
+    mandala.draw(seconds_since_start, &mut shape_renderer, 1);
     let triangles = mesh.triangles;
-    let expected = 1320;
+    let expected = 8070;
 
     assert_eq!(expected, triangles.len());
 }

@@ -25,7 +25,6 @@ use instant::Instant;
 //const PETAL_FILENAME: &str = "petal_bad.svg";
 const PETAL_STRINGS_FILENAME: &str = "svg_strings.txt";
 const PETAL_COUNT: usize = 12;
-const PETAL_STAGE: usize = 30;
 const CANVAS_SIZE: (f32, f32) = (1024.0, 1024.0);
 const FPS: f64 = 60.0; // Frames per second
 const UPS: f64 = 60.0; // Updates per second
@@ -92,12 +91,8 @@ impl State for MandalaExample {
             (CANVAS_SIZE.0 / 2.0, CANVAS_SIZE.1 / 2.0),
             (2.0, 2.0),
             PETAL_COUNT,
-
-            PETAL_STAGE,
-           
             mandala_state_open,
             mandala_state_closed,
-
         );
 
         Ok(MandalaExample {

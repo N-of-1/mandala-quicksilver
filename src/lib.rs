@@ -34,7 +34,7 @@ pub struct MutableMesh {
 impl MutableMesh {
     /// Create a default with key values specified
     pub fn new(svg_file_name: &str) -> Self {
-        let mut path = parse_path_from_svg_str(svg_file_name);
+        let path = parse_path_from_svg_str(svg_file_name);
         let tessellator = FillTessellator::new();
         let color = Color::RED; // Initial state will be overriden on first draw
 
@@ -124,7 +124,6 @@ impl Mandala {
         screen_position: impl Into<Vector>,
         scale: impl Into<Vector>,
         petal_count: usize,
-        petal_stages: usize,
         mandala_state_open: MandalaState,
         mandala_state_closed: MandalaState,
     ) -> Self {
@@ -133,10 +132,10 @@ impl Mandala {
         let current_phase_duration = 3.0; // Start the transition clock when the application starts
         let svg_d_strings: Vec<String> = lines_from_file(petal_shapes_filename);
         //let mut petal_nodes: Vec<MutableMesh> = Vec::new();
- //       for i in 0..petal_stages {
-  //          petal_nodes.push(MutableMesh::new(&svg_d_strings[i]))
-    //    }
-        let mut petal: MutableMesh = MutableMesh::new(&svg_d_strings[29 as usize]);
+        //       for i in 0..petal_stages {
+        //          petal_nodes.push(MutableMesh::new(&svg_d_strings[i]))
+        //    }
+        //let petal: MutableMesh = MutableMesh::new(&svg_d_strings[29 as usize]);
         //let petal: MutableMesh = p;
         let mut petal_rotation: Vec<Transform> = Vec::new();
         let petal_angle = 360.0 / petal_count as f32;
@@ -146,23 +145,13 @@ impl Mandala {
 
         Self {
             petal_count,
-            state_open: MandalaState {
-                color: color_open,
-                petal_translate_transform: Transform::translate((0.0,0.0)),
-                petal_rotate_transform: Transform::rotate(-5),
-                petal_scale_transform: Transform::scale((1., 1.)),
-            },
-            state_closed: MandalaState {
-                color: color_closed,
-                petal_translate_transform: Transform::translate((0.0,0.0)),
-                petal_rotate_transform: Transform::rotate(5.0),
-                petal_scale_transform: Transform::scale((1.0, 1.0)),
-            },
+            mandala_state_open,
+            mandala_state_closed,
             mandala_center,
             petal_rotation,
             current_phase_start,
             current_phase_duration,
-            svg_d_strings
+            svg_d_strings,
         }
     }
 
