@@ -186,6 +186,10 @@ impl Mandala {
         transition_duration: f32,
         target_value: f32,
     ) {
+        debug_assert!(current_time >= 0.0);
+        debug_assert!(transition_duration >= 0.0);
+        debug_assert!(target_value.is_finite());
+
         let current_value = self.current_value(current_time);
         println!(
             "Start transition current: {}  target: {}",
@@ -202,10 +206,15 @@ impl Mandala {
 
     /// Get a [0.0..1.0] number representing %open of the mandala based on the transition rendering time
     pub fn current_value(&self, current_time: f32) -> f32 {
+        debug_assert!(current_time >= 0.0);
         let start = self.current_transition.start_value;
         let end = self.current_transition.end_value;
 
-        start + (end - start) * self.current_percent(current_time)
+        let val = start + (end - start) * self.current_percent(current_time);
+
+        debug_assert!(val.is_finite());
+
+        val
     }
 
     /// Get a [0.0..1.0] number representing %complete of the transition rendering time
