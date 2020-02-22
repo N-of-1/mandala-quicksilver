@@ -11,10 +11,10 @@ svg="0.6"
 log = "0.4"
 
 # Uncomment this block unless targeting ARM
-quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="image_fix_and_add"}
+# quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="image_fix_and_add"}
 
 # Uncomment this block if targeting ARM
-#quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="arm_image_fix_and_add"}
+quicksilver = {git = "https://github.com/paulirotta/quicksilver.git", branch="arm_image_fix_and_add"}
 
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
