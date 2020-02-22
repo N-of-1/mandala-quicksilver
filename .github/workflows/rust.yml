@@ -1,0 +1,38 @@
+name: Rust
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: [stable, beta]
+    env:
+      RUSTFLAGS: -D warnings
+      CARGO_INCREMENTAL: 0
+      RUN_SLOW_TESTS: 1
+      RUSTUP_MAX_RETRIES: 10
+      CARGO_NET_RETRY: 10
+    steps:
+      - uses: hecrj/setup-rust-action@v1.2.0
+        with:
+          rust-version: ${{ matrix.rust }}
+          components: rustfmt
+          targets: wasm32-unknown-unknown
+      - uses: actions/checkout@master
+      - name: Install Dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt update && sudo apt install libudev-dev zlib1g-dev alsa libasound2-dev
+      - name: Check formatting
+        if: matrix.rust == 'stable'
+        run: cargo fmt -- --check
+      - name: Build
+        run: cargo build --verbose
+      - name: Run tests
+        run: cargo test --verbose
+#      - name: Run tests in WASM
+#        if: matrix.os == 'macos-latest' || matrix.os == 'windows.latest'
+#        run: cargo install cargo-web && cargo web test --nodejs

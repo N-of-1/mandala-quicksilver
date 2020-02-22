@@ -1,9 +1,9 @@
 // examples/display_mandala.rs
 
-use mandala_quicksilver::Mandala;
+use mandala_quicksilver::{Mandala, MandalaState};
 
 use quicksilver::{
-    geom::Vector,
+    geom::{Transform, Vector},
     graphics::{Color, Mesh, ShapeRenderer},
     input::{ButtonState, Key},
     lifecycle::{run, Event, Settings, State, Window},
@@ -29,21 +29,24 @@ const PETAL_STAGE: usize = 30;
 const CANVAS_SIZE: (f32, f32) = (1024.0, 1024.0);
 const FPS: f64 = 60.0; // Frames per second
 const UPS: f64 = 60.0; // Updates per second
-const COLOR_BACKGROUND: Color = Color::BLACK;
-const COLOR_PETAL_OPEN: Color = Color {
+
+const COLOR_CRIMSON: Color = Color {
     // Crimson
     r: 220.0 / 256.0,
     g: 20.0 / 256.0,
     b: 60.0 / 256.0,
     a: 1.0,
 };
-const COLOR_PETAL_CLOSED: Color = Color {
+const COLOR_TURQOISE: Color = Color {
     // Turqoise, translucent
     r: 64.0 / 256.0,
     g: 224.0 / 256.0,
     b: 208.0 / 256.0,
     a: 0.2,
 };
+const COLOR_BACKGROUND: Color = Color::BLACK;
+const COLOR_PETAL_OPEN: Color = COLOR_CRIMSON;
+const COLOR_PETAL_CLOSED: Color = COLOR_TURQOISE;
 
 fn main() {
     run::<MandalaExample>(
@@ -72,14 +75,29 @@ impl MandalaExample {
 impl State for MandalaExample {
     fn new() -> Result<MandalaExample> {
         let start_time = Instant::now();
+        let mandala_state_open = MandalaState::new(
+            COLOR_PETAL_OPEN,
+            Transform::rotate(90),
+            Transform::translate((50.0, 0.0)),
+            Transform::scale((1.0, 1.0)),
+        );
+        let mandala_state_closed = MandalaState::new(
+            COLOR_PETAL_CLOSED,
+            Transform::rotate(0.0),
+            Transform::translate((0.0, 0.0)),
+            Transform::scale((0.1, 1.0)),
+        );
         let mandala = Mandala::new(
             PETAL_STRINGS_FILENAME,
             (CANVAS_SIZE.0 / 2.0, CANVAS_SIZE.1 / 2.0),
             (2.0, 2.0),
             PETAL_COUNT,
+
             PETAL_STAGE,
-            COLOR_PETAL_OPEN,
-            COLOR_PETAL_CLOSED,
+           
+            mandala_state_open,
+            mandala_state_closed,
+
         );
 
         Ok(MandalaExample {
