@@ -76,15 +76,15 @@ impl State for MandalaExample {
         let start_time = Instant::now();
         let mandala_state_open = MandalaState::new(
             COLOR_PETAL_OPEN,
-            Transform::rotate(90),
-            Transform::translate((50.0, 0.0)),
+            Transform::rotate(0),
+            Transform::translate((0.0, 0.0)),
             Transform::scale((1.0, 1.0)),
         );
         let mandala_state_closed = MandalaState::new(
             COLOR_PETAL_CLOSED,
             Transform::rotate(0.0),
             Transform::translate((0.0, 0.0)),
-            Transform::scale((0.1, 1.0)),
+            Transform::scale((1.0, 1.0)),
         );
         let mandala = Mandala::new(
             PETAL_STRINGS_FILENAME,
@@ -119,9 +119,15 @@ impl State for MandalaExample {
 
         let mut mesh = Mesh::new();
         let mut shape_renderer = ShapeRenderer::new(&mut mesh, Color::RED);
+        let now = Instant::now();
+        let petal_shape_index =
+            ((now.duration_since(self.start_time).as_millis() / 10000) as usize).max(29);
 
-        self.mandala
-            .draw(self.seconds_since_start(), &mut shape_renderer, 1 as usize);
+        self.mandala.draw(
+            self.seconds_since_start(),
+            &mut shape_renderer,
+            petal_shape_index,
+        );
         window.mesh().extend(&mesh);
 
         Ok(())
