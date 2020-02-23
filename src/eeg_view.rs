@@ -75,7 +75,7 @@ const SPIDER_GRAPH_LABEL_OFFSET: Vector = Vector { x: -160., y: -160. }; // Shif
 const FREQUENCY_LABEL_OFFSET: Vector = Vector { x: 0.5, y: -1.5 }; // Shift letters up slightly to center in the circle
 const SPIDER_SCALE: f32 = 150.0; // Make alpha etc larger for display purposes
 
-const IMAGE_SET_SIZE: usize = 10;
+const IMAGE_SET_SIZE: usize = 30;
 pub struct ImageSet {
     _images: [Asset<Image>; IMAGE_SET_SIZE],
 }
@@ -95,7 +95,7 @@ impl ImageSet {
         let _images: [Asset<Image>; IMAGE_SET_SIZE] = arr![Asset::new(Image::load(filename(filename_prefix, {
                 i = i + 1;
                 i - 1
-            }))); 10];
+            }))); 30];
 
         Self { _images }
     }

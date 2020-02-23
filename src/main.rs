@@ -115,7 +115,7 @@ const COLOR_BUTTON: Color = COLOR_NOF1_DARK_BLUE;
 const COLOR_BUTTON_PRESSED: Color = COLOR_NOF1_LIGHT_BLUE;
 const COLOR_EMOTION: Color = Color::YELLOW;
 const COLOR_VALENCE_MANDALA_CLOSED: Color = Color {
-    // Red violet, positive
+    // Purple, positive
     r: 0.415,
     g: 0.051,
     b: 0.67,
@@ -123,7 +123,7 @@ const COLOR_VALENCE_MANDALA_CLOSED: Color = Color {
 };
 
 const COLOR_VALENCE_MANDALA_OPEN: Color = Color {
-    // Crimson, High arousal
+    // Crimson, negative
     r: 220.0 / 256.0,
     g: 20.0 / 256.0,
     b: 60.0 / 256.0,

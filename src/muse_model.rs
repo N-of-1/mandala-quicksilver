@@ -424,7 +424,7 @@ impl MuseModel {
     /// Front assymetry- higher values mean more positive mood
     fn front_assymetry(&self) -> f32 {
         let base = std::f32::consts::E;
-        base.powf(self.alpha[AF7] - self.alpha[AF8])
+        base.powf(self.alpha[AF8] - self.alpha[AF7])
     }
 
     /// Positive-negative balance of emotion
