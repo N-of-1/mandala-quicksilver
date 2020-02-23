@@ -11,7 +11,7 @@ use std::net::SocketAddr;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
 use std::{convert::From, time::Duration};
-
+//use std::iter::Sum
 const FOREHEAD_COUNTDOWN: i32 = 5; // 60th of a second counts
 const BLINK_COUNTDOWN: i32 = 5;
 const CLENCH_COUNTDOWN: i32 = 5;
@@ -324,8 +324,10 @@ where
 
 /// Average the raw values
 pub fn average_from_front_electrodes(x: &[f32; 4]) -> f32 {
+    let base = std::f32::consts::E;
+    (base.powf(x[1]) + base.powf(x[2]))/2.0
     //(x[0] + x[1] + x[2] + x[3]) / 4.0
-    (x[1] + x[2]) / 2.0
+    //(x[1] + x[2]) / 2.0
 }
 
 impl MuseModel {
@@ -433,9 +435,9 @@ impl MuseModel {
     /// Level of emotional intensity based on other, more primitive values
     pub fn calc_abolute_arousal(&self) -> f32 {
         let base = std::f32::consts::E;
-        let posterior_alpha = (self.alpha[TP9] + self.alpha[TP10]) / 2.0;
-        let posterior_theta = (self.theta[TP9] + self.theta[AF7]) / 2.0;
-        base.powf(posterior_alpha - posterior_theta)
+        let frontal_apha = (base.powf(self.alpha[AF7]) + base.powf(self.alpha[AF8])) / 2.0;
+        let frontal_theta = (base.powf(self.theta[AF7]) + base.powf(self.theta[AF8])) / 2.0;
+        frontal_theta/(frontal_apha + 1e-6)
     }
 
     /// Calculate the current arousal value and add it to the length-limited history
@@ -451,9 +453,9 @@ impl MuseModel {
     /// Calculate the current valence value and add it to the length-limited history
     pub fn update_valence(&mut self) -> bool {
         let abs_valence = self.calc_absolute_valence();
-        // if abs_valence.is_finite() {
-        //     println!("abs valence: {}   alpha0: {}", abs_valence, self.alpha[0]);
-        // }
+            if abs_valence.is_finite() {
+                //println!("abs valence: {}   alpha0: {}", abs_valence, self.alpha[0]);
+            }
         self.valence.set(abs_valence)
     }
 
@@ -510,7 +512,7 @@ impl MuseModel {
             }
             MuseMessageType::Delta { a, b, c, d } => {
                 self.delta = [a, b, c, d];
-                println!("Delta {} {} {} {}", a, b, c, d);
+                //println!("Delta {} {} {} {}", a, b, c, d);
                 self.send((time, MuseMessageType::Delta { a, b, c, d }));
                 Ok(true)
             }

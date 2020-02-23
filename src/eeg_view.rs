@@ -76,7 +76,7 @@ const FREQUENCY_LABEL_OFFSET: Vector = Vector { x: 0.5, y: -1.5 }; // Shift lett
 const SPIDER_SCALE: f32 = 150.0; // Make alpha etc larger for display purposes
 
 const IMAGE_SET_SIZE: usize = 10;
-struct ImageSet {
+pub struct ImageSet {
     _images: [Asset<Image>; IMAGE_SET_SIZE],
 }
 
@@ -90,7 +90,7 @@ fn filename(filename_prefix: &str, i: usize) -> String {
 }
 
 impl ImageSet {
-    fn new(filename_prefix: &str) -> Self {
+    pub fn new(filename_prefix: &str) -> Self {
         let mut i: usize = 0;
         let _images: [Asset<Image>; IMAGE_SET_SIZE] = arr![Asset::new(Image::load(filename(filename_prefix, {
                 i = i + 1;
@@ -100,7 +100,7 @@ impl ImageSet {
         Self { _images }
     }
 
-    fn _draw(&mut self, image_number: usize, window: &mut Window) {
+    pub fn _draw(&mut self, image_number: usize, window: &mut Window) {
         self._images[image_number]
             .execute(|image| {
                 window.draw(

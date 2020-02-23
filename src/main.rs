@@ -20,7 +20,7 @@ extern crate quicksilver;
 extern crate log;
 
 use arr_macro::arr;
-use eeg_view::EegViewState;
+use eeg_view::{EegViewState, ImageSet};
 use mandala_quicksilver::{Mandala, MandalaState};
 use muse_model::{DisplayType, MuseModel};
 use quicksilver::{
@@ -115,31 +115,34 @@ const COLOR_BUTTON: Color = COLOR_NOF1_DARK_BLUE;
 const COLOR_BUTTON_PRESSED: Color = COLOR_NOF1_LIGHT_BLUE;
 const COLOR_EMOTION: Color = Color::YELLOW;
 const COLOR_VALENCE_MANDALA_CLOSED: Color = Color {
-    // Turqoise, translucent, Positive smoother more open
-    r: 64.0 / 256.0,
-    g: 224.0 / 256.0,
-    b: 208.0 / 256.0,
-    a: 0.5,
+    // Red violet, positive
+    r: 0.415,
+    g: 0.051,
+    b: 0.67,
+    a: 0.8,
 };
+
 const COLOR_VALENCE_MANDALA_OPEN: Color = Color {
-    // Crimson, Negative spiky emotion
+    // Crimson, High arousal
     r: 220.0 / 256.0,
     g: 20.0 / 256.0,
     b: 60.0 / 256.0,
-    a: 1.0,
+    a: 0.85,
+
 };
 const COLOR_AROUSAL_MANDALA_CLOSED: Color = Color {
-    // Dark purple, translucent, low arousal
-    r: 75.0 / 256.0,
-    g: 48.0 / 255.0,
-    b: 165.0 / 255.0,
-    a: 0.4,
+    //Blue, low arousal
+    r: 189. / 256.,
+    g: 247. / 256.,
+    b: 255. / 256.,
+    a: 0.7,
+
 };
 const COLOR_AROUSAL_MANDALA_OPEN: Color = Color {
-    // Orange, opaque, high arousal
-    r: 1.0,
-    g: 0.67,
-    b: 0.0,
+    // yellow orange, Low arousal 255, 174, 66
+    r: 255.0 / 256.0,
+    g: 174.0 / 256.0,
+    b: 66.0 / 256.0,
     a: 1.0,
 };
 
@@ -190,8 +193,12 @@ struct AppState {
     mandala_valence: Mandala,
     mandala_arousal: Mandala,
     muse_model: MuseModel,
+    positive_images: ImageSet,
+    negative_images: ImageSet,
     eeg_view_state: EegViewState,
     _rx_eeg: Receiver<(Duration, muse_model::MuseMessageType)>,
+    image_index: usize,
+    local_frame: u64,
 }
 
 impl AppState {
@@ -241,6 +248,8 @@ fn bound_normalized_value(normalized: f32) -> f32 {
 
 impl State for AppState {
     fn new() -> Result<AppState> {
+        let mut image_index: usize = 0;
+        let mut local_frame: u64 = 0;
         let title_font = Font::load(FONT_EXTRA_BOLD);
         let help_font = Font::load(FONT_MULI);
 
@@ -253,7 +262,8 @@ impl State for AppState {
         let help_text = Asset::new(help_font.and_then(|font| {
             result(font.render(STR_HELP_TEXT, &FontStyle::new(FONT_MULI_SIZE, COLOR_TEXT)))
         }));
-
+        let positive_images = ImageSet::new(r#"positive-images//p"#);
+        let negative_images = ImageSet::new("n");
         let logo = Asset::new(Image::load(IMAGE_LOGO));
         let sound_click = Asset::new(Sound::load(SOUND_CLICK));
         let sound_blah = Asset::new(Sound::load(SOUND_BLAH));
@@ -262,13 +272,13 @@ impl State for AppState {
             COLOR_VALENCE_MANDALA_OPEN,
             Transform::rotate(90),
             Transform::translate((50.0, 0.0)),
-            Transform::scale((1.0, 1.0)),
+            Transform::scale((0.85, 0.95)),
         );
         let mandala_valence_state_closed = MandalaState::new(
             COLOR_VALENCE_MANDALA_CLOSED,
             Transform::rotate(0.0),
             Transform::translate((0.0, 0.0)),
-            Transform::scale((0.1, 1.0)),
+            Transform::scale((0.8, 0.65)),
         );
         let mut mandala_valence = Mandala::new(
             MANDALA_VALENCE_PETAL_SVG_NAME,
@@ -281,21 +291,21 @@ impl State for AppState {
         );
         let mandala_arousal_state_open = MandalaState::new(
             COLOR_AROUSAL_MANDALA_OPEN,
-            Transform::rotate(5),
-            Transform::translate((0.0, 0.0)),
-            Transform::scale((0.4, 0.8)),
+            Transform::rotate(60),
+            Transform::translate((35.0, 0.0)),
+            Transform::scale((0.85, 0.75)),
         );
         let mandala_arousal_state_closed = MandalaState::new(
             COLOR_AROUSAL_MANDALA_CLOSED,
-            Transform::rotate(90.0),
+            Transform::rotate(0.0),
             Transform::translate((0.0, 0.0)),
-            Transform::scale((0.2, 1.0)),
+            Transform::scale((1., 1.)),
         );
         let mut mandala_arousal = Mandala::new(
             MANDALA_AROUSAL_PETAL_SVG_NAME,
             MANDALA_CENTER,
             MANDALA_SCALE,
-            20,
+            12,
             mandala_arousal_state_open,
             mandala_arousal_state_closed,
             0.0,
@@ -316,11 +326,15 @@ impl State for AppState {
             sound_blah,
             mandala_valence,
             mandala_arousal,
+            positive_images,
+            negative_images,
             left_button_color: COLOR_CLEAR,
             right_button_color: COLOR_CLEAR,
             eeg_view_state,
             _rx_eeg: rx_eeg,
             muse_model,
+            image_index,
+            local_frame,
         })
     }
 
@@ -407,26 +421,26 @@ impl State for AppState {
             self.muse_model.receive_packets();
         if self.frame_count > FRAME_TITLE {
             let current_time = self.seconds_since_start();
-            // println!("Time: {}", current_time);
+            //println!("Time: {}", current_time);
             if let Some(normalized_valence) = normalized_valence_option {
-                println!("Normalized valence: {}", normalized_valence);
+                //println!("Normalized valence: {}", normalized_valence);
                 if normalized_valence.is_finite() {
                     self.mandala_valence.start_transition(
                         current_time,
                         MANDALA_TRANSITION_DURATION,
-                        // bound_normalized_value(normalized_valence),
                         normalized_valence,
+                        //bound_normalized_value(normalized_valence),
                     );
                 }
             }
             if let Some(normalized_arousal) = normalized_arousal_option {
-                println!("Normalized arousal: {}", normalized_arousal);
+                //println!("Normalized arousal: {}", normalized_arousal);
                 if normalized_arousal.is_finite() {
                     self.mandala_arousal.start_transition(
                         current_time,
                         MANDALA_TRANSITION_DURATION,
-                        // bound_normalized_value(normalized_arousal),
                         normalized_arousal,
+                        //bound_normalized_value(normalized_arousal),
                     );
                 }
             }
@@ -446,11 +460,13 @@ impl State for AppState {
 
     // This is called FPS times per second
     fn draw(&mut self, window: &mut Window) -> Result<()> {
+        println!("frame_count: {:?} Local frame: {:?} Image index: {:?}", self.frame_count, self.local_frame, self.image_index);
         let background_color = match self.frame_count < FRAME_TITLE {
             true => Color::BLACK,
             false => COLOR_BACKGROUND,
         };
         window.clear(background_color)?;
+
 
         if self.frame_count < FRAME_TITLE {
             self.draw_mandala(window);
@@ -497,10 +513,27 @@ impl State for AppState {
             self.right_button_color = COLOR_BUTTON;
         } else if self.frame_count < FRAME_SETTLE {
             match self.muse_model.display_type {
-                DisplayType::Mandala => self.draw_mandala(window),
+                DisplayType::Mandala => {self.draw_mandala(window);
+                    if self.local_frame < 30u64 {
+                        if self.image_index <= 29usize{
+                            self.positive_images._draw(self.image_index, window);
+                        }
+                        else {
+                            self.negative_images._draw(self.image_index - 29usize, window);
+                        }
+                        self.local_frame += 1;                    
+                    }
+                    else {
+                        println!("ELSE: {}", self.local_frame);
+                        self.local_frame *= 0;
+                        self.image_index += 1 as usize;
+                    }
+                }
+
                 _ => eeg_view::draw_view(&self.muse_model, window, &mut self.eeg_view_state),
             }
         } else if self.frame_count < FRAME_MEME {
+
             // LEFT BUTTON
             let left_color = self.left_button_color;
             self.sound_click.execute(|_| {
